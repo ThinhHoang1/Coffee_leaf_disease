@@ -19,39 +19,6 @@ from ultralytics import YOLO
 import pandas as pd
 st.set_page_config(layout="wide")
 from PIL import Image, ImageOps
-import streamlit as st
-import sqlite3
-
-conn = sqlite3.connect('users.db')
-c = conn.cursor()
-
-# Create the users table (if it doesn't exist)
-def create_table():
-    c.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        user_id TEXT PRIMARY KEY,
-        username TEXT,
-        name TEXT,
-        password TEXT
-    )''')
-    conn.commit()
-
-# Register a new user
-def register_user(user_id, user_name, password):
-    c.execute('INSERT INTO users (user_id, username, name, password) VALUES (?, ?, ?, ?)', (user_id, user_name, user_name, password))
-    conn.commit()
-
-# Check if the user is registered (login validation)
-def check_login(user_id, password):
-    c.execute('SELECT * FROM users WHERE user_id = ? AND password = ?', (user_id, password))
-    data = c.fetchone()
-    return data
-
-# --- Session Management ---
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.user_id = None
-    st.session_state.user_name = None
 
 # Device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -533,75 +500,22 @@ def detect_objects(image):
     
     return result_image, detections
 
-# Call to ensure the users table is created when app is first run
-create_table()
 
-# --- Session Management ---
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.user_id = None
 # === Main App Logic ===
 st.title("🌿 Coffee Leaf Disease Classifier + Few-Shot Learning + Detection")
 # --- User ID Input ---
-# --- Login Section ---
-# --- User ID Input ---
-# --- Login Section ---
-if not st.session_state.logged_in:
-    menu = ["Login", "Register"]
-    choice = st.sidebar.radio("Select an action", menu)
-    
-    if choice == "Login":
-        st.header("🔐 Login to the App")
-        
-        # Login form
-        with st.form("login_form"):
-            user_id = st.text_input("Enter your User ID:")
-            password = st.text_input("Enter your Password:", type="password")
-            login_button = st.form_submit_button("Login")
-            
-            if login_button:
-                user_data = check_login(user_id, password)
-                if user_data:
-                    st.session_state.logged_in = True
-                    st.session_state.user_id = user_id
-                    st.session_state.user_name = user_data[2]  # assuming the 'name' column stores the user's name
-                    st.success(f"Welcome, {st.session_state.user_name}!")
-                else:
-                    st.error("Invalid User ID or Password")
-    
-    elif choice == "Register":
-        st.subheader("New to the app? Register here:")
+if 'user_id' not in st.session_state:
+    st.session_state.user_id = None
 
-        # Registration form
-        with st.form("register_form"):
-            new_user_id = st.text_input("Choose a User ID:")
-            new_name = st.text_input("Your Name:")
-            new_password = st.text_input("Choose a Password:", type="password")
-            register_button = st.form_submit_button("Register")
-            
-            if register_button:
-                if new_user_id and new_name and new_password:
-                    # Check if the user ID already exists
-                    c.execute('SELECT * FROM users WHERE user_id = ?', (new_user_id,))
-                    existing_user = c.fetchone()
-                    if existing_user:
-                        st.error("User ID already exists. Please choose a different one.")
-                    else:
-                        register_user(new_user_id, new_name, new_password)
-                        st.success(f"New user {new_name} created! Please log in.")
-                else:
-                    st.error("Please fill in all the fields.")
+with st.sidebar:
+    st.subheader("👤 User Identification")
+    user_id_input = st.text_input("Enter your User ID:", value=st.session_state.user_id or "")
+    if user_id_input:
+        st.session_state.user_id = user_id_input.strip()
+        st.success(f"Welcome, {st.session_state.user_id}!")
+    else:
+        st.warning("Please enter your User ID to continue.")
 
-else:
-    # After login, show the rest of the app (disease classifier, few-shot learning, etc.)
-    st.header(f"👋 Hello, {st.session_state.user_name}!")
-    
-    # Show options after logging in
-    option = st.radio(
-        "Choose an action:",
-        ["Upload & Predict", "Add/Manage Rare Classes", "Train Few-Shot Model", "Visualize Prototypes", "Detection"],
-        horizontal=True, key="main_option"
-    )
 # --- Initialize Session State ---
 if 'few_shot_trained' not in st.session_state:
     st.session_state.few_shot_trained = False
