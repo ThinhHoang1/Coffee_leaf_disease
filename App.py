@@ -26,8 +26,8 @@ st.sidebar.info(f"Using device: {DEVICE}")
 # --- IMPORTANT: Paths ---
 # Using relative paths or environment variables is recommended for portability
 # Replace these with your actual paths or use a configuration method
-BASE_DATASET = "E:/App data/data_optimize/Basee_data"  # Example: Use forward slashes or raw strings r"E:\..."
-RARE_DATASET = "E:/App data/data_optimize/Rare data"  # Example: Use forward slashes or raw strings r"E:\..."
+BASE_DATASET = "E:\Coffe_leaf_disease_streamlit_app\Coffee_leaf_disease\App data\data_optimize\Basee_data"  # Example: Use forward slashes or raw strings r"E:\..."
+RARE_DATASET = "E:\Coffe_leaf_disease_streamlit_app\Coffee_leaf_disease\App data\data_optimize\Rare data"  # Example: Use forward slashes or raw strings r"E:\..."
 
 # Check if paths exist
 if not os.path.isdir(BASE_DATASET):
