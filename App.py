@@ -21,23 +21,32 @@ st.set_page_config(layout="wide")
 from PIL import Image, ImageOps
 import sqlite3
 
+import streamlit as st
+import sqlite3
+
 # 1. Create a connection to the SQLite database
 conn = sqlite3.connect('users.db')
 c = conn.cursor()
 
 # 2. Create the users table (if it doesn't exist)
 def create_table():
-    c.execute('CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)')
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        user_id TEXT PRIMARY KEY,
+        username TEXT,
+        name TEXT,
+        password TEXT
+    )''')
     conn.commit()
 
 # 3. Register a new user
-def register_user(username, password):
-    c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+def register_user(user_id, user_name, password):
+    c.execute('INSERT INTO users (user_id, name, password) VALUES (?, ?, ?)', (user_id, user_name, password))
     conn.commit()
 
 # 4. Check if the user is registered (login validation)
-def check_login(username, password):
-    c.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
+def check_login(user_id, password):
+    c.execute('SELECT * FROM users WHERE user_id = ? AND password = ?', (user_id, password))
     data = c.fetchone()
     return data
 
@@ -50,30 +59,32 @@ def show_login_register():
 
     if choice == "Login":
         st.subheader("Login to Your Account")
-        username = st.text_input("Username")
+        user_id = st.text_input("User ID")
         password = st.text_input("Password", type="password")
         
         if st.button("Login"):
-            user = check_login(username, password)
+            user = check_login(user_id, password)
             if user:
-                st.success(f"Welcome back, {username}!")
+                st.success(f"Welcome back, {user[1]}!")
             else:
-                st.error("Invalid username or password.")
+                st.error("Invalid user ID or password.")
     
     elif choice == "Register":
         st.subheader("Create a New Account")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        new_user_id = st.text_input("User ID")
+        new_name = st.text_input("Name")
+        new_password = st.text_input("Password", type="password")
         
         if st.button("Register"):
-            # Check if username already exists
-            c.execute('SELECT * FROM users WHERE username = ?', (username,))
+            # Check if user ID already exists
+            c.execute('SELECT * FROM users WHERE user_id = ?', (new_user_id,))
             existing_user = c.fetchone()
             if existing_user:
-                st.error("Username already exists.")
+                st.error("User ID already exists. Please choose a different one.")
             else:
-                register_user(username, password)
-                st.success("Account created successfully! Please log in.")
+                # Register new user
+                register_user(new_user_id, new_name, new_password)
+                st.success(f"New user {new_name} created! Please log in.")
 
 # Main App Logic
 def main():
@@ -84,6 +95,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 # Device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 st.sidebar.info(f"Using device: {DEVICE}")
