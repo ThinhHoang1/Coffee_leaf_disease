@@ -502,6 +502,18 @@ def detect_objects(image):
 
 # === Main App Logic ===
 st.title("🌿 Coffee Leaf Disease Classifier + Few-Shot Learning + Detection")
+# --- User ID Input ---
+if 'user_id' not in st.session_state:
+    st.session_state.user_id = None
+
+with st.sidebar:
+    st.subheader("👤 User Identification")
+    user_id_input = st.text_input("Enter your User ID:", value=st.session_state.user_id or "")
+    if user_id_input:
+        st.session_state.user_id = user_id_input.strip()
+        st.success(f"Welcome, {st.session_state.user_id}!")
+    else:
+        st.warning("Please enter your User ID to continue.")
 
 # --- Initialize Session State ---
 if 'few_shot_trained' not in st.session_state:
@@ -538,11 +550,20 @@ if st.session_state.model_mode == 'few_shot' and st.session_state.final_prototyp
 
 
 # --- Main Panel Options ---
-option = st.radio(
-    "Choose an action:",
-    ["Upload & Predict", "Add/Manage Rare Classes", "Train Few-Shot Model", "Visualize Prototypes", "Detection"],
-    horizontal=True, key="main_option" # Added key for stability
-)
+if st.session_state.user_id:
+    # PLACE YOUR MAIN LOGIC BELOW THIS CHECK
+    # For example: the st.radio option section and everything that follows
+    option = st.radio(
+        "Choose an action:",
+        ["Upload & Predict", "Add/Manage Rare Classes", "Train Few-Shot Model", "Visualize Prototypes", "Detection"],
+        horizontal=True, key="main_option"
+    )
+
+    # (keep rest of your code unchanged here)
+
+else:
+    st.stop()  # Prevent rest of the app from running
+
 
 # Select the appropriate model based on mode
 # We load both and use the one needed, caching helps
@@ -649,7 +670,8 @@ elif option == "Add/Manage Rare Classes":
                 st.warning(f"Please upload exactly 5 images. You uploaded {len(uploaded_files)}.")
             else:
                 sanitized_class_name = "".join(c for c in new_class_name if c.isalnum() or c in (' ', '_')).rstrip().replace(" ", "_")
-                new_class_dir = os.path.join(RARE_DATASET, sanitized_class_name)
+                new_class_dir = os.path.join(RARE_DATASET, st.session_state.user_id, sanitized_class_name)
+
 
                 if os.path.exists(new_class_dir):
                     st.warning(f"A class directory named '{sanitized_class_name}' already exists. Choose a different name or delete the existing one first.")
@@ -684,7 +706,8 @@ elif option == "Add/Manage Rare Classes":
     st.header("❌ Delete a Rare Class")
 
     try:
-        rare_class_dirs = [d for d in os.listdir(RARE_DATASET) if os.path.isdir(os.path.join(RARE_DATASET, d))]
+        user_rare_dir = os.path.join(RARE_DATASET, st.session_state.user_id)
+        rare_class_dirs = [d for d in os.listdir(user_rare_dir) if os.path.isdir(os.path.join(user_rare_dir, d))]
         
         if not rare_class_dirs:
             st.info("No rare classes found to delete.")
