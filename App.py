@@ -19,7 +19,71 @@ from ultralytics import YOLO
 import pandas as pd
 st.set_page_config(layout="wide")
 from PIL import Image, ImageOps
-from auth import check_login, register_user, create_table 
+import sqlite3
+
+# 1. Create a connection to the SQLite database
+conn = sqlite3.connect('users.db')
+c = conn.cursor()
+
+# 2. Create the users table (if it doesn't exist)
+def create_table():
+    c.execute('CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)')
+    conn.commit()
+
+# 3. Register a new user
+def register_user(username, password):
+    c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+    conn.commit()
+
+# 4. Check if the user is registered (login validation)
+def check_login(username, password):
+    c.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
+    data = c.fetchone()
+    return data
+
+# 5. Streamlit UI for registration and login
+def show_login_register():
+    st.title("User Login and Registration")
+
+    menu = ["Login", "Register"]
+    choice = st.sidebar.selectbox("Select an option", menu)
+
+    if choice == "Login":
+        st.subheader("Login to Your Account")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        
+        if st.button("Login"):
+            user = check_login(username, password)
+            if user:
+                st.success(f"Welcome back, {username}!")
+            else:
+                st.error("Invalid username or password.")
+    
+    elif choice == "Register":
+        st.subheader("Create a New Account")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        
+        if st.button("Register"):
+            # Check if username already exists
+            c.execute('SELECT * FROM users WHERE username = ?', (username,))
+            existing_user = c.fetchone()
+            if existing_user:
+                st.error("Username already exists.")
+            else:
+                register_user(username, password)
+                st.success("Account created successfully! Please log in.")
+
+# Main App Logic
+def main():
+    create_table()  # Ensure the table exists when the app starts
+
+    # Show the login and registration form
+    show_login_register()
+
+if __name__ == '__main__':
+    main()
 # Device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 st.sidebar.info(f"Using device: {DEVICE}")
