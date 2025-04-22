@@ -19,6 +19,7 @@ from ultralytics import YOLO
 import pandas as pd
 st.set_page_config(layout="wide")
 from PIL import Image, ImageOps
+from auth import check_login, register_user, create_table 
 # Device
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 st.sidebar.info(f"Using device: {DEVICE}")
@@ -499,22 +500,62 @@ def detect_objects(image):
     
     return result_image, detections
 
+# Call to ensure the users table is created when app is first run
+create_table()
 
+# --- Session Management ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.user_id = None
 # === Main App Logic ===
 st.title("🌿 Coffee Leaf Disease Classifier + Few-Shot Learning + Detection")
 # --- User ID Input ---
-if 'user_id' not in st.session_state:
-    st.session_state.user_id = None
+# --- Login Section ---
+if not st.session_state.logged_in:
+    st.header("🔐 Login to the App")
+    
+    # Login form
+    with st.form("login_form"):
+        user_id = st.text_input("Enter your User ID:")
+        password = st.text_input("Enter your Password:", type="password")
+        login_button = st.form_submit_button("Login")
+        
+        if login_button:
+            if check_login(user_id, password):
+                st.session_state.logged_in = True
+                st.session_state.user_id = user_id
+                st.session_state.user_name = user_id  # You can replace this with the actual name if needed
+                st.success(f"Welcome, {st.session_state.user_name}!")
+            else:
+                st.error("Invalid User ID or Password")
 
-with st.sidebar:
-    st.subheader("👤 User Identification")
-    user_id_input = st.text_input("Enter your User ID:", value=st.session_state.user_id or "")
-    if user_id_input:
-        st.session_state.user_id = user_id_input.strip()
-        st.success(f"Welcome, {st.session_state.user_id}!")
-    else:
-        st.warning("Please enter your User ID to continue.")
+    # Registration section
+    st.subheader("New to the app? Register here:")
+    with st.form("register_form"):
+        new_user_id = st.text_input("Choose a User ID:")
+        new_name = st.text_input("Your Name:")
+        new_password = st.text_input("Choose a Password:", type="password")
+        register_button = st.form_submit_button("Register")
+        
+        if register_button:
+            if new_user_id and new_password and new_name:
+                if register_user(new_user_id, new_name, new_password):
+                    st.success(f"New user {new_name} created! Please log in.")
+                else:
+                    st.error("User ID already exists. Please choose a different ID.")
+            else:
+                st.error("Please fill in all the fields.")
 
+else:
+    # After login, show the rest of the app (disease classifier, few-shot learning, etc.)
+    st.header(f"👋 Hello, {st.session_state.user_name}!")
+
+    # You can now show the disease classifier app or other functionality after login
+    option = st.radio(
+        "Choose an action:",
+        ["Upload & Predict", "Add/Manage Rare Classes", "Train Few-Shot Model", "Visualize Prototypes", "Detection"],
+        horizontal=True, key="main_option"
+    )
 # --- Initialize Session State ---
 if 'few_shot_trained' not in st.session_state:
     st.session_state.few_shot_trained = False
