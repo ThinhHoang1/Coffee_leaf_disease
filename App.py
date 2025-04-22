@@ -40,7 +40,7 @@ os.makedirs(RARE_DATASET, exist_ok=True)
 #     st.stop()
 
 # Path to the saved model weights - Ensure this exists
-MODEL_WEIGHTS_PATH = "E:/Model save/Deep_learning_model/model/efficientnet_coffee (1).pth" # Example: Use forward slashes
+MODEL_WEIGHTS_PATH = "model/efficientnet_coffee (1).pth" # Example: Use forward slashes
 if not os.path.isfile(MODEL_WEIGHTS_PATH):
     st.error(f"Model weights file not found: {MODEL_WEIGHTS_PATH}")
     st.stop()
@@ -458,7 +458,7 @@ def visualize_prototypes(prototypes_tensor, prototype_labels, class_names_list):
 # Load YOLOv11 model (use the trained model from training step)
 @st.cache_resource
 def load_yolo_model():
-    model_weights_path ="E:\\Capstone_project_application\\yolov11 (50 epochs)-20250417T153600Z-001\\yolov11 (50 epochs)\\train\weights\\best.pt"  # Path to the trained model
+    model_weights_path ="model/best.pt"  # Path to the trained model
     model = YOLO(model_weights_path)  # Load the trained YOLOv11 model
     model.to(DEVICE)  # Move to GPU if available
     model.eval()  # Set to evaluation mode
