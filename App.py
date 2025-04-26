@@ -633,7 +633,7 @@ elif option == "Detection":
 
 elif option == "Add/Manage Rare Classes":
     st.header("➕ Add New Rare Class (Few-Shot)")
-    st.write(f"Upload exactly 5 sample images for the new disease class. They will be saved in: `{RARE_DATASET}`")
+    st.write(f"Upload exactly 5 sample images for the new disease class")
 
     with st.form("add_class_form"):
         new_class_name = st.text_input("Enter the name for the new rare class:")
