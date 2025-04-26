@@ -723,22 +723,24 @@ elif option == "Train Few-Shot Model":
     st.warning("⚠️ This will fine-tune the feature extractor. Performance on original classes might change.")
 
     if len(class_names) <= 1:
-         st.error("Need at least two classes in the combined dataset to perform few-shot training.")
+        st.error("Need at least two classes in the combined dataset to perform few-shot training.")
     else:
         st.info(f"Training will use all {len(class_names)} available classes (Base + Rare).")
 
+        # --- Hardcoded Training Parameters ---
+        epochs = 10              # Fixed value for epochs
+        n_way_train = min(len(class_names), 5) # Fixed value for N-way (adjust if needed, keeping original logic for max)
+        episodes_per_epoch = 5 # Fixed value for Episodes/Epoch
+        n_shot = 2             # Fixed value for N-shot
+        learning_rate = 1e-5    # Fixed value for Learning Rate
+        n_query = 2             # Fixed value for N-query
+
+    
+
+
         with st.form("train_form"):
-            st.write("Configure Training Parameters:")
-            cols = st.columns(3)
-            with cols[0]:
-                epochs = st.number_input("Epochs", min_value=1, max_value=100, value=5, step=1)
-                n_way_train = st.number_input("N-way", min_value=2, max_value=min(len(class_names), 10), value=min(len(class_names), 5), step=1, help="Classes per Episode")
-            with cols[1]:
-                episodes_per_epoch = st.number_input("Episodes/Epoch", min_value=1, max_value=500, value=50, step=10) # Increased default
-                n_shot = st.number_input("N-shot", min_value=1, max_value=10, value=5, step=1, help="Support Images/Class")
-            with cols[2]:
-                learning_rate = st.number_input("Learning Rate", min_value=1e-7, max_value=1e-3, value=1e-5, step=1e-6, format="%e")
-                n_query = st.number_input("N-query", min_value=1, max_value=10, value=5, step=1, help="Query Images/Class")
+            # st.write("Configure Training Parameters:") # Removed as parameters are fixed
+            # The column layout for inputs is removed
 
             freeze_backbone = st.checkbox("❄️ Freeze Backbone Layers (Train only projection layer)", value=True, help="Recommended to reduce forgetting.")
 
@@ -768,18 +770,18 @@ elif option == "Train Few-Shot Model":
                              st.stop()
                         st.success("Base backbone frozen. Training projection layer only.")
                     except AttributeError:
-                         st.error("Could not access model.model or model.projection to freeze/unfreeze parameters. Training all layers.")
-                         trainable_params = list(model.parameters()) # Fallback
+                           st.error("Could not access model.model or model.projection to freeze/unfreeze parameters. Training all layers.")
+                           trainable_params = list(model.parameters()) # Fallback
                 else:
                     st.info("Training all layers (backbone + projection).")
                     # Ensure all params are trainable if not freezing
                     for param in model.parameters():
-                        param.requires_grad = True
+                         param.requires_grad = True
                     trainable_params = list(model.parameters())
 
 
                 optimizer = torch.optim.Adam(trainable_params, lr=learning_rate, weight_decay=1e-5)
-                st.info(f"Using Adam optimizer with LR={learning_rate:.0e}")
+                st.info(f"Using Adam optimizer with fixed LR={learning_rate:.0e}") # Updated message
 
                 # Training Loop
                 progress_bar = st.progress(0)
@@ -809,29 +811,29 @@ elif option == "Train Few-Shot Model":
                             s_emb = model(s_imgs)
                             q_emb = model(q_imgs)
                         except Exception as model_e:
-                             st.error(f"Error during model forward pass in training: {model_e}")
-                             continue # Skip episode on model error
+                            st.error(f"Error during model forward pass in training: {model_e}")
+                            continue # Skip episode on model error
 
                         loss, accuracy = proto_loss(s_emb, s_labels, q_emb, q_labels)
 
                         if loss is not None and not torch.isnan(loss) and loss.requires_grad:
-                             try:
+                            try:
                                 loss.backward()
                                 optimizer.step()
                                 epoch_loss += loss.item()
                                 epoch_accuracy += accuracy
                                 valid_episodes_in_epoch += 1
-                             except Exception as optim_e:
-                                  st.error(f"Error during optimizer step or backward pass: {optim_e}")
-                                  # Consider stopping or just skipping step? Skipping for now.
+                            except Exception as optim_e:
+                                 st.error(f"Error during optimizer step or backward pass: {optim_e}")
+                                 # Consider stopping or just skipping step? Skipping for now.
                         # else: # Reduce verbosity
-                            # st.warning(f"Skipping episode {episode+1}/{episodes_per_epoch} due to invalid loss.")
+                             # st.warning(f"Skipping episode {episode+1}/{episodes_per_epoch} due to invalid loss.")
 
                         # Update status and progress bar less frequently to avoid slowing down
                         if (episode + 1) % 10 == 0 or episode == episodes_per_epoch - 1:
-                              progress = current_step / total_steps
-                              progress_bar.progress(progress)
-                              status_placeholder.text(f"Epoch {epoch+1}/{epochs} | Episode {episode+1}/{episodes_per_epoch} | Progress: {progress*100:.1f}%")
+                             progress = current_step / total_steps
+                             progress_bar.progress(progress)
+                             status_placeholder.text(f"Epoch {epoch+1}/{epochs} | Episode {episode+1}/{episodes_per_epoch} | Progress: {progress*100:.1f}%")
 
 
                     # Log epoch results
