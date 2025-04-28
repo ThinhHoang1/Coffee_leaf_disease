@@ -1,0 +1,18 @@
+{
+    "prototype_labels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+    ],
+    "class_names_on_save": [
+        "Cerscospora",
+        "Healthy",
+        "Leaf rust",
+        "Miner",
+        "Phoma",
+        "Pink"
+    ]
+}
