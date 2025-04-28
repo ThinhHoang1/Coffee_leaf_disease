@@ -791,7 +791,7 @@ else:
 # --- Main Panel Options ---
 option = st.radio(
     "Choose an action:",
-    ["Upload & Predict", "Add/Manage Rare Classes", "Train Few-Shot Model", "Visualize Prototypes", "Detection"],
+    ["Upload & Predict", "Add/Manage Rare Classes", "Train Few-Shot Model", "Detection"],
     horizontal=True, key="main_option" # Added key for stability
 )
 
@@ -888,7 +888,7 @@ elif option == "Detection":
         display_image = Image.fromarray(result_image) # Convert numpy array back to PIL Image
         display_image = ImageOps.contain(display_image, (900, 700)) # Resize while keeping aspect ratio within bounds
 
-        st.image(display_image, caption="Detection Result", use_column_width=True) # Use column width
+        st.image(display_image, caption="Detection Result", use_container_width=True) # Use column width
 
         # Show detection results
         if not detections.empty:
@@ -1005,8 +1005,6 @@ elif option == "Add/Manage Rare Classes":
 
 elif option == "Train Few-Shot Model":
     st.header("🚀 Train Few-Shot Model")
-    st.warning("⚠️ This will fine-tune the feature extractor. Performance on original classes might change. Consider saving the state after training.")
-
     # --- Check if enough classes exist before showing the form ---
     if len(class_names) < 2: # Need at least 2 classes for N-way=2 training
         st.error("Need at least two classes (Base + Rare combined) to perform few-shot training.")
@@ -1031,14 +1029,6 @@ elif option == "Train Few-Shot Model":
     learning_rate = 1e-5
 
     # Add a warning about potential resource usage if N-way is high
-    if n_way_train > 7: # Example threshold, adjust as needed
-        st.warning(f"⚠️ Using N-Way = {n_way_train} (all classes). This uses more memory and computation per episode than lower N-way settings. Ensure your system has sufficient resources (especially GPU VRAM).")
-    elif n_way_train > 5:
-        st.info(f"Using N-Way = {n_way_train} (all classes). This might be resource-intensive.")
-
-
-    st.info(f"Training Parameters: Epochs={epochs}, N-Way={n_way_train}, Episodes/Epoch={episodes_per_epoch}, N-Shot={n_shot}, N-Query={n_query}, LR={learning_rate:.0e}")
-
     # --- Training Form ---
     with st.form("train_form"):
         freeze_backbone = st.checkbox("❄️ Freeze Base Model Layers (Train only projection layer)", value=True, help="Recommended to prevent catastrophic forgetting of base classes.")
@@ -1093,8 +1083,7 @@ elif option == "Train Few-Shot Model":
                  st.stop()
 
             optimizer = torch.optim.Adam(trainable_params, lr=learning_rate, weight_decay=1e-5)
-            st.info(f"Using Adam optimizer with LR={learning_rate:.0e}. Training {len(trainable_params)} parameters.")
-
+           
             # --- Training Loop ---
             loss_history = []
             accuracy_history = []
@@ -1240,42 +1229,7 @@ elif option == "Train Few-Shot Model":
                  st.warning("Please enter a name before saving.")
 
 
-elif option == "Visualize Prototypes":
-    st.header("📊 Visualize Class Prototypes (PCA)")
-    if st.session_state.final_prototypes is not None and st.session_state.prototype_labels is not None:
-        # Pass the required arguments: tensor, labels list, class names list
-        visualize_prototypes(
-            st.session_state.final_prototypes,
-            st.session_state.prototype_labels,
-            class_names # Pass the globally available class names list
-        )
-    else:
-        st.warning("⚠️ No prototypes calculated yet. Run 'Train Few-Shot Model' or load a saved state.")
 
-    st.divider()
-    st.info("You can calculate prototypes based on the *current* feature extractor state (useful before/after training or loading).")
-    if st.button("Calculate/Recalculate Prototypes Now"):
-        with st.spinner("Calculating prototypes..."):
-            # Use the current state of the cached feature extractor
-            proto_model = cached_feature_extractor_model()
-            proto_model.eval()
-            # Clear cache before calculation? Depends if calculate_final_prototypes uses cached data internally
-            st.cache_data.clear() # Clear data cache to be safe
-            # Recalculate dataset info
-            current_combined_dataset_viz, _, current_class_names_viz, _ = get_combined_dataset_and_indices(BASE_DATASET, RARE_DATASET)
-            # Calculate prototypes
-            temp_prototypes, temp_labels = calculate_final_prototypes(proto_model, current_combined_dataset_viz, current_class_names_viz)
-
-            if temp_prototypes is not None:
-                 st.session_state.final_prototypes = temp_prototypes
-                 st.session_state.prototype_labels = temp_labels
-                 # Don't set few_shot_trained=True here automatically, maybe?
-                 # Let's set mode to few_shot if prototypes are calculated successfully
-                 st.session_state.model_mode = 'few_shot'
-                 st.success("Prototypes calculated/recalculated.")
-                 st.rerun() # Rerun to show visualization or update status
-            else:
-                 st.error("Failed to calculate prototypes.")
 
 # --- Cleanup Temporary Directory (Optional) ---
 # This might run on every script run, which is usually fine for temp dirs.
@@ -1284,3 +1238,4 @@ elif option == "Visualize Prototypes":
 #     shutil.rmtree(TEMP_DIR)
 # except Exception as e:
 #     st.sidebar.warning(f"Could not cleanup temp dir {TEMP_DIR}: {e}")
+##
