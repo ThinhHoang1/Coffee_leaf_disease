@@ -47,7 +47,7 @@ Below is a glimpse of the application interface.
 
 *(Replace this placeholder with an actual screenshot or GIF of your application. You can upload your image to GitHub or an image hosting service and link it here.)*
 
-![Application Demo Placeholder](https://placehold.co/800x450/20232A/E0E0E0?text=App+Screenshot+Here&font=roboto)
+![Application Demo Placeholder](https://github.com/ThinhHoang1/Coffee_leaf_disease/blob/main/Application%20demo.png)
 
 *(Suggested caption: A brief look at the user interface for uploading images and viewing predictions.)*
 
