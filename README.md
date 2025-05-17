@@ -45,11 +45,9 @@ The application is built with Streamlit, providing an interactive interface for 
 
 Below is a glimpse of the application interface.
 
-*(Replace this placeholder with an actual screenshot or GIF of your application. You can upload your image to GitHub or an image hosting service and link it here.)*
 
 ![Application Demo Placeholder](https://github.com/ThinhHoang1/Coffee_leaf_disease/blob/main/Application%20demo.png)
 
-*(Suggested caption: A brief look at the user interface for uploading images and viewing predictions.)*
 
 ---
 
